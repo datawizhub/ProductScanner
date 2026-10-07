@@ -1,8 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { Session } from '@supabase/supabase-js';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
-import { Redirect } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -15,7 +13,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
+import { MessageScreen } from '@/components/message-screen';
+import { useTheme } from '@/constants/theme';
+import { useAuth } from '@/lib/auth';
+import { getSupabase } from '@/lib/supabase';
 import { getPrototypeStoreId, lookupBarcode, type BarcodeLookup } from '@/lib/warehouse-lookup';
 
 type LookupState =
@@ -30,11 +31,63 @@ type StoreState =
   | { userId: string; status: 'no-access' }
   | { userId: string; status: 'error'; message: string };
 
+function useStyles() {
+  const { colors, spacing } = useTheme();
+  return useMemo(
+    () =>
+      StyleSheet.create({
+        container: { flex: 1, backgroundColor: colors.background, padding: spacing.four },
+        content: { gap: spacing.three, paddingBottom: spacing.five },
+        header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+        title: { fontSize: 24, fontWeight: '700', color: colors.text },
+        account: { color: colors.textSecondary, marginTop: -spacing.three },
+        link: { color: colors.primary, fontWeight: '600' },
+        scanButton: {
+          backgroundColor: colors.primary,
+          borderRadius: 20,
+          paddingVertical: spacing.five,
+          alignItems: 'center',
+          gap: spacing.two,
+        },
+        scanButtonText: { color: colors.primaryText, fontSize: 18, fontWeight: '700' },
+        lastScanned: { fontSize: 14, color: colors.textSecondary },
+        notice: { fontSize: 15, color: colors.textSecondary, textAlign: 'center' },
+        error: { fontSize: 15, color: colors.danger },
+        card: {
+          backgroundColor: colors.backgroundElement,
+          borderRadius: 14,
+          padding: spacing.three + 2,
+          gap: spacing.two,
+        },
+        itemName: { fontSize: 22, fontWeight: '700', color: colors.text },
+        detail: { color: colors.textSecondary, fontSize: 14 },
+        stockTitle: { fontSize: 17, fontWeight: '700', marginTop: 10, color: colors.text },
+        stockRow: {
+          borderTopWidth: 1,
+          borderTopColor: colors.backgroundSelected,
+          paddingTop: 10,
+          gap: spacing.one,
+        },
+        location: { fontSize: 16, fontWeight: '600', color: colors.text },
+        quantity: { fontSize: 16, fontWeight: '700', color: colors.text },
+        grantBtn: {
+          backgroundColor: colors.primary,
+          paddingHorizontal: spacing.four - 4,
+          paddingVertical: 12,
+          borderRadius: 10,
+        },
+        grantText: { color: colors.primaryText, fontWeight: '600' },
+      }),
+    [colors, spacing],
+  );
+}
+
 export default function HomeScreen() {
-  const [auth, setAuth] = useState<{ ready: boolean; session: Session | null }>({
-    ready: !isSupabaseConfigured,
-    session: null,
-  });
+  const styles = useStyles();
+  const { colors } = useTheme();
+  const { session } = useAuth();
+  const userId = session?.user.id;
+
   const [store, setStore] = useState<StoreState | null>(null);
   const [storeRetry, setStoreRetry] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -42,17 +95,6 @@ export default function HomeScreen() {
   const [scannedType, setScannedType] = useState<string | null>(null);
   const [lookupState, setLookupState] = useState<LookupState>({ status: 'idle' });
   const lookupRequest = useRef(0);
-  const userId = auth.session?.user.id;
-
-  useEffect(() => {
-    if (!isSupabaseConfigured) return;
-    const { data: { subscription } } = getSupabase().auth.onAuthStateChange((event, session) => {
-      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'PASSWORD_RECOVERY') {
-        setAuth({ ready: true, session });
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
 
   useEffect(() => {
     if (!userId) return;
@@ -60,9 +102,9 @@ export default function HomeScreen() {
     getPrototypeStoreId()
       .then((storeId) => {
         if (!active) return;
-        setStore(storeId
-          ? { userId, status: 'ready', storeId }
-          : { userId, status: 'no-access' });
+        setStore(
+          storeId ? { userId, status: 'ready', storeId } : { userId, status: 'no-access' },
+        );
       })
       .catch((error: unknown) => {
         if (!active) return;
@@ -72,7 +114,9 @@ export default function HomeScreen() {
           message: error instanceof Error ? error.message : 'Could not load store access.',
         });
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [userId, storeRetry]);
 
   async function handleScan(code: string, type: string, storeId: string) {
@@ -95,20 +139,20 @@ export default function HomeScreen() {
     }
   }
 
+  // The Stack.Protected guard in app/_layout.tsx sends the user to /login
+  // once the session clears, so we only need to reset local state here.
   async function signOut() {
     lookupRequest.current += 1;
     setScannerOpen(false);
     setScannedCode(null);
+    setScannedType(null);
     setLookupState({ status: 'idle' });
     setStore(null);
+    setStoreRetry(0);
     await getSupabase().auth.signOut();
   }
 
-  if (!isSupabaseConfigured) {
-    return <MessageScreen message="Add the Supabase URL and publishable key to .env.local, then restart Expo." />;
-  }
-  if (!auth.ready) return <MessageScreen message="Loading account…" loading />;
-  if (!auth.session) return <Redirect href="/login" />;
+  if (!session) return null;
   if (!store || store.userId !== userId) {
     return <MessageScreen message="Checking store access…" loading />;
   }
@@ -120,7 +164,9 @@ export default function HomeScreen() {
           setStore(null);
           setStoreRetry((count) => count + 1);
         }}
-        onSignOut={() => { void signOut(); }}
+        onSignOut={() => {
+          void signOut();
+        }}
       />
     );
   }
@@ -128,7 +174,9 @@ export default function HomeScreen() {
     return (
       <MessageScreen
         message="This account does not have access to Prototype Store. Ask your manager."
-        onSignOut={() => { void signOut(); }}
+        onSignOut={() => {
+          void signOut();
+        }}
       />
     );
   }
@@ -139,24 +187,32 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>Stock lookup</Text>
-          <Pressable accessibilityRole="button" onPress={() => { void signOut(); }}>
-            <Text style={styles.signOut}>Sign out</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              void signOut();
+            }}>
+            <Text style={styles.link}>Sign out</Text>
           </Pressable>
         </View>
-        <Text style={styles.account}>{auth.session.user.email}</Text>
+        <Text style={styles.account}>{session.user.email}</Text>
 
         <TouchableOpacity
           accessibilityRole="button"
           style={styles.scanButton}
           onPress={() => setScannerOpen(true)}>
-          <Ionicons name="barcode-outline" size={40} color="#fff" />
+          <Ionicons name="barcode-outline" size={40} color={colors.primaryText} />
           <Text style={styles.scanButtonText}>Scan Barcode</Text>
         </TouchableOpacity>
 
         {scannedCode && (
-          <Text style={styles.result}>Last scanned: {scannedCode} ({scannedType})</Text>
+          <Text style={styles.lastScanned}>
+            Last scanned: {scannedCode} ({scannedType})
+          </Text>
         )}
-        {lookupState.status === 'loading' && <ActivityIndicator accessibilityLabel="Looking up item" />}
+        {lookupState.status === 'loading' && (
+          <ActivityIndicator color={colors.primary} accessibilityLabel="Looking up item" />
+        )}
         {lookupState.status === 'not-found' && (
           <Text style={styles.notice}>No item has this barcode in Prototype Store.</Text>
         )}
@@ -169,52 +225,41 @@ export default function HomeScreen() {
       <ScannerModal
         visible={scannerOpen}
         onClose={() => setScannerOpen(false)}
-        onScanned={(code, type) => { void handleScan(code, type, storeId); }}
+        onScanned={(code, type) => {
+          void handleScan(code, type, storeId);
+        }}
       />
     </SafeAreaView>
   );
 }
 
 function ItemResult({ result }: { result: BarcodeLookup }) {
+  const styles = useStyles();
   const { item, stock, totalQuantity } = result;
+
   return (
     <View style={styles.card}>
       <Text style={styles.itemName}>{item.name}</Text>
       <Text style={styles.detail}>SKU: {item.sku}</Text>
-      <Text style={styles.detail}>Price: ${item.price.toFixed(2)} per {item.unit}</Text>
+      <Text style={styles.detail}>
+        Price: ${item.price.toFixed(2)} per {item.unit}
+      </Text>
       {item.description && <Text style={styles.detail}>{item.description}</Text>}
       <Text style={styles.stockTitle}>In stock: {totalQuantity}</Text>
       {stock.length === 0 ? (
         <Text style={styles.detail}>No stock recorded yet.</Text>
-      ) : stock.map(({ location, quantity }) => (
-        <View key={location.id} style={styles.stockRow}>
-          <Text style={styles.location}>{location.code}</Text>
-          <Text style={styles.detail}>Aisle {location.aisle} · Rack {location.rack} · Bin {location.bin}</Text>
-          <Text style={styles.quantity}>{quantity}</Text>
-        </View>
-      ))}
+      ) : (
+        stock.map(({ location, quantity }) => (
+          <View key={location.id} style={styles.stockRow}>
+            <Text style={styles.location}>{location.code}</Text>
+            <Text style={styles.detail}>
+              Aisle {location.aisle} · Rack {location.rack} · Bin {location.bin}
+            </Text>
+            <Text style={styles.quantity}>{quantity}</Text>
+          </View>
+        ))
+      )}
     </View>
-  );
-}
-
-function MessageScreen({
-  message,
-  loading = false,
-  onRetry,
-  onSignOut,
-}: {
-  message: string;
-  loading?: boolean;
-  onRetry?: () => void;
-  onSignOut?: () => void;
-}) {
-  return (
-    <SafeAreaView style={[styles.container, styles.center]}>
-      {loading && <ActivityIndicator />}
-      <Text style={styles.notice}>{message}</Text>
-      {onRetry && <Pressable accessibilityRole="button" onPress={onRetry}><Text style={styles.signOut}>Retry</Text></Pressable>}
-      {onSignOut && <Pressable accessibilityRole="button" onPress={onSignOut}><Text style={styles.signOut}>Sign out</Text></Pressable>}
-    </SafeAreaView>
   );
 }
 
@@ -227,6 +272,7 @@ function ScannerModal({
   onClose: () => void;
   onScanned: (code: string, type: string) => void;
 }) {
+  const styles = useStyles();
   const [permission, requestPermission] = useCameraPermissions();
   const locked = useRef(false);
 
@@ -246,76 +292,52 @@ function ScannerModal({
       animationType="slide"
       presentationStyle="fullScreen"
       onRequestClose={onClose}>
-      <View style={styles.modalContainer}>
+      {/* The camera view is always black/white regardless of theme. */}
+      <View style={scanner.container}>
         {!permission ? (
-          <View style={styles.center}>
-            <Text style={styles.white}>Loading…</Text>
+          <View style={scanner.center}>
+            <Text style={scanner.text}>Loading…</Text>
           </View>
         ) : !permission.granted ? (
-          <View style={styles.center}>
-            <Text style={styles.white}>Camera permission is required to scan barcodes</Text>
-            <TouchableOpacity style={styles.grantBtn} onPress={requestPermission}>
-              <Text style={styles.grantText}>Grant Permission</Text>
+          <View style={scanner.center}>
+            <Text style={scanner.text}>Camera permission is required to scan barcodes</Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              style={styles.grantBtn}
+              onPress={requestPermission}>
+              <Text style={styles.grantText}>Grant permission</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <CameraView
             style={StyleSheet.absoluteFill}
             facing="back"
-            barcodeScannerSettings={{
-              barcodeTypes: ['ean13', 'ean8', 'code128', 'code39', 'upc_a', 'upc_e', 'qr'],
-            }}
+            // QR is left out on purpose: it is reserved for bin/location labels.
+            barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'code128', 'upc_a'] }}
             onBarcodeScanned={handleScan}
           />
         )}
 
-        <SafeAreaView style={styles.overlay}>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+        <SafeAreaView style={scanner.overlay}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Close scanner"
+            style={scanner.closeBtn}
+            onPress={onClose}>
             <Ionicons name="close" size={28} color="#fff" />
           </TouchableOpacity>
-          <View style={styles.frame} />
-          <Text style={styles.hint}>Align the barcode inside the frame</Text>
+          <View style={scanner.frame} />
+          <Text style={scanner.hint}>Align the barcode inside the frame</Text>
         </SafeAreaView>
       </View>
     </Modal>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f6f8', padding: 20 },
-  content: { gap: 18, paddingBottom: 32 },
-  center: { alignItems: 'center', justifyContent: 'center', gap: 16 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: '700' },
-  account: { color: '#4b5563', marginTop: -14 },
-  signOut: { color: '#1e6ef2', fontWeight: '600' },
-  scanButton: {
-    backgroundColor: '#1e6ef2',
-    borderRadius: 20,
-    paddingVertical: 32,
-    alignItems: 'center',
-    gap: 8,
-  },
-  scanButtonText: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  result: { fontSize: 14, color: '#333' },
-  notice: { fontSize: 15, color: '#4b5563', textAlign: 'center' },
-  error: { fontSize: 15, color: '#b91c1c' },
-  card: { backgroundColor: '#fff', borderRadius: 14, padding: 18, gap: 8 },
-  itemName: { fontSize: 22, fontWeight: '700', color: '#111827' },
-  detail: { color: '#4b5563', fontSize: 14 },
-  stockTitle: { fontSize: 17, fontWeight: '700', marginTop: 10 },
-  stockRow: { borderTopWidth: 1, borderTopColor: '#e5e7eb', paddingTop: 10, gap: 4 },
-  location: { fontSize: 16, fontWeight: '600' },
-  quantity: { fontSize: 16, fontWeight: '700' },
-  modalContainer: { flex: 1, backgroundColor: '#000' },
-  white: { color: '#fff', textAlign: 'center', fontSize: 16 },
-  grantBtn: {
-    backgroundColor: '#1e6ef2',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  grantText: { color: '#fff', fontWeight: '600' },
+const scanner = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
+  text: { color: '#fff', textAlign: 'center', fontSize: 16 },
   overlay: {
     flex: 1,
     alignItems: 'center',

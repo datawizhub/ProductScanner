@@ -19,6 +19,7 @@ export const Colors =
         textSecondary: '#60646C',
         primary: '#1e6ef2',
         primaryText: '#ffffff',
+        danger: '#b91c1c',
     },
 
     dark: 
@@ -30,6 +31,7 @@ export const Colors =
         textSecondary: '#B0B4BA',
         primary: '#4d8dff',
         primaryText: '#ffffff',
+        danger: '#f87171',
     },
 } as const;
 
