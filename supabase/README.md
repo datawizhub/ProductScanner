@@ -24,7 +24,7 @@ Every RPC also accepts optional `p_note`. For a scan, query `item_barcodes` by `
 
 ## First app user
 
-There are currently no users in this project's Supabase Auth. After the first manager signs up or is invited, an administrator can provision membership in the SQL Editor by replacing the placeholder email:
+The first app manager has been invited, confirmed, and assigned to `prototype-store`. For each later user, an administrator can provision membership in the SQL Editor by replacing the placeholder email:
 
 ```sql
 insert into public.store_memberships (store_id, user_id, role)
@@ -41,6 +41,6 @@ Use the same statement with `staff` for staff users. Check that it affects one r
 
 The initial migration was applied in the dashboard SQL Editor, then marked applied in the remote CLI migration history with `supabase migration repair`. The checkout is linked to project `lgwpmnzwpmzkcwniuicf`; `supabase migration list --linked` shows local and remote version `20261006052338` matching. Future schema changes should be created with `supabase migration new`, deployed with `supabase db push`, and committed to git. After a schema change, regenerate [`src/types/database.types.ts`](../src/types/database.types.ts) with `supabase gen types typescript --linked --schema public`.
 
-Functional testing with signed-in staff and manager users remains pending because this project has no Auth users yet. The schema and migration history have been checked, but the role-specific RPC flows have not been exercised with app credentials.
+A rollback-only database smoke check passed the manager and staff stock RPC flows, the movement ledger counts, insufficient-stock rejection, staff adjustment denial, and direct stock-update denial. A follow-up query confirmed that the manager role remained in place and no temporary test rows persisted. The mobile Login tab uses Supabase Auth and routes successful sign-ins to the scanner.
 
 `seed.sql` contains optional fake catalog and location rows for local development. It does not create stock or Auth users.

@@ -1,5 +1,16 @@
 -- Optional local prototype data. Run only in a disposable development database.
 insert into public.items (store_id, sku, name, price, description, unit)
+select id, 'DEMO-EAN13', 'EAN-13 Scan Test Item', 0, 'Prototype barcode lookup test', 'each'
+from public.stores where code = 'prototype-store'
+on conflict (store_id, sku) do nothing;
+
+insert into public.item_barcodes (store_id, barcode, item_id)
+select i.store_id, '5901234123457', i.id
+from public.items i join public.stores s on s.id = i.store_id
+where s.code = 'prototype-store' and i.sku = 'DEMO-EAN13'
+on conflict (store_id, barcode) do nothing;
+
+insert into public.items (store_id, sku, name, price, description, unit)
 select id, 'DEMO-COFFEE', 'Demo Coffee Beans', 18.50, 'Prototype item', 'bag'
 from public.stores where code = 'prototype-store'
 on conflict (store_id, sku) do nothing;

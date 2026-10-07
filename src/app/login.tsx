@@ -1,5 +1,7 @@
 import { useTheme } from '@/constants/theme';
+import { getSupabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import {
     ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
@@ -16,40 +18,26 @@ export default function LoginScreen()
     const [showPassword, setShowPassword] = useState(false);
     const [load, setLoad] = useState(false);
 
-    // Sign In
-    const handleSignIn = async () => 
-        {
-            if (!email.trim() || !password) 
-            {
-                Alert.alert('Missing info', 'Please enter both email and password.');
-                return;
-            }
+    const handleSignIn = async () => {
+        if (!email.trim() || !password) {
+            Alert.alert('Missing info', 'Please enter both email and password.');
+            return;
+        }
 
-            setLoad(true);
-            try 
-            {
-            // TODO: replace with your real auth call
-            // const res = await fetch('https://your-api.com/login', {
-            //   method: 'POST',
-            //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify({ email, password }),
-            // });
-            // const data = await res.json();
-            // if (!res.ok) throw new Error(data.message || 'Login failed');
-
-            await new Promise((r) => setTimeout(r, 800)); // mock delay
-
-            // TODO: store token, navigate to home
-            // router.replace('/(tabs)');
-            } 
-            catch (err: any) 
-            {
-                Alert.alert('Sign in failed', err.message ?? 'Please try again.');
-            } 
-            finally 
-            {
-                setLoad(false);
-            }
+        setLoad(true);
+        try {
+            const { data, error } = await getSupabase().auth.signInWithPassword({
+                email: email.trim(),
+                password,
+            });
+            if (error) throw error;
+            if (!data.session) throw new Error('Could not start a session. Please try again.');
+            router.replace('/');
+        } catch (error) {
+            Alert.alert('Sign in failed', error instanceof Error ? error.message : 'Please try again.');
+        } finally {
+            setLoad(false);
+        }
     };
 
     // Need Access
@@ -140,6 +128,9 @@ export default function LoginScreen()
 
                 {/* Sign in */}
                 <TouchableOpacity
+                    accessibilityRole="button"
+                    onPress={() => { void handleSignIn(); }}
+                    disabled={!canSubmit}
                     style=
                     {[styles.signInBtn, { backgroundColor: colors.primary },
                         !canSubmit && styles.signInBtnDisabled, ]}>

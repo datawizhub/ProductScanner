@@ -1,4 +1,15 @@
-# Welcome to your Expo app 👋
+# ProductScanner
+
+## Test an EAN-13 scan against Supabase
+
+1. Copy `.env.example` to `.env.local` and fill in the project's **publishable** key. Never use a secret or service-role key in the app. Restart Expo after changing the file.
+2. Run `npx expo start --lan` and open the app in Expo Go on your phone.
+3. Sign in on the Login tab with an invited Prototype Store account. Successful sign-in opens the scanner on Home. Accounts and roles are assigned by an administrator; the app does not offer self-registration.
+4. Scan [EAN-13 test label 5901234123457](test-assets/ean13-5901234123457.svg). It should show **EAN-13 Scan Test Item** (SKU `DEMO-EAN13`), price $0.00, and no stock recorded yet.
+
+The scan looks up the exact barcode text within `prototype-store`. If a barcode is not in `item_barcodes`, the app shows a not-found message. Stock quantities and aisle/rack/bin appear when stock is received through the database RPCs. Signing out returns to the Login tab.
+
+# Expo template notes
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
