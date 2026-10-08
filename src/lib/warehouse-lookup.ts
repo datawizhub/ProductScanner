@@ -13,6 +13,12 @@ export type BarcodeLookup = {
   totalQuantity: number;
 };
 
+export type ItemDetailByID = {
+  item: Pick<Tables<'items'>, 'id' | 'store_id' | 'sku' | 'name' | 'description' | 'price' | 'unit'>;
+  stock: StockAtLocation[];
+  totalQuantity: number;
+};
+
 export type Item = 
 {
   id: string;
@@ -103,4 +109,58 @@ export async function fetchAllItem(search = ''): Promise<Item[]> {
   const { data, error } = await query;
   if (error) throw new Error(error.message);
   return data ?? [];
+}
+
+export async function findItemById(itemId: string): Promise<ItemDetailByID | null> {
+  const supabase = getSupabase();
+  const { data: match, error: idError } = await supabase
+    .from('items')
+    .select('store_id')
+    .eq('id', itemId)
+    .maybeSingle();
+
+  if (idError) throw idError;
+  if (!match) return null;
+
+  const [itemResult, stockResult] = await Promise.all([
+    supabase
+      .from('items')
+      .select('id, store_id, sku, name, description, price, unit')
+      .eq('id', itemId)
+      .single(),
+    supabase
+      .from('stock')
+      .select('location_id, quantity')
+      .eq('store_id', match.store_id)
+      .eq('item_id', itemId),
+  ]);
+
+  if (itemResult.error) throw itemResult.error;
+  if (stockResult.error) throw stockResult.error;
+
+  const stockRows = stockResult.data ?? [];
+  const locationIds = stockRows.map((row) => row.location_id);
+  if (locationIds.length === 0) {
+    return { item: itemResult.data, stock: [], totalQuantity: 0 };
+  }
+
+  const { data: locations, error: locationsError } = await supabase
+    .from('locations')
+    .select('id, code, aisle, rack, bin')
+    .eq('store_id', match.store_id)
+    .in('id', locationIds);
+
+  if (locationsError) throw locationsError;
+  const byId = new Map((locations ?? []).map((location) => [location.id, location]));
+  const stock = stockRows.flatMap((row) => {
+    const location = byId.get(row.location_id);
+    return location ? [{ quantity: row.quantity, location }] : [];
+  });
+  stock.sort((a, b) => a.location.code.localeCompare(b.location.code));
+
+  return {
+    item: itemResult.data,
+    stock,
+    totalQuantity: stock.reduce((sum, row) => sum + row.quantity, 0),
+  };
 }

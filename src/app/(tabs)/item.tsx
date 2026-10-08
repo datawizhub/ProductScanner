@@ -6,27 +6,24 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'; // 👈 add
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/constants/theme';
 import { fetchAllItem, type Item } from '@/lib/warehouse-lookup';
+import { router } from 'expo-router';
 
-// Flex ratios per column — they don't need to sum to anything specific.
 const FLEX = {
   id: 1,
   name: 3,
   sku: 2,
 };
 
-// Horizontal padding on the table's outer container
 const H_PADDING = 16;
 
 export default function ItemsScreen() {
-  const { colors, spacing } = useTheme();
-  const { width } = useWindowDimensions();
+  const { colors } = useTheme();
 
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,9 +108,7 @@ export default function ItemsScreen() {
           renderItem={({ item, index }) => (
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => {
-                // TODO: router.push(`/item/${item.id}`);
-              }}
+              onPress={() => router.push({ pathname: '/items/[id]', params: { id: item.id } })}
               style={[
                 styles.row,
                 {

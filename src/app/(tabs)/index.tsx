@@ -133,8 +133,6 @@ export default function HomeScreen() {
     }
   }
 
-  // The Stack.Protected guard in app/_layout.tsx sends the user to /login
-  // once the session clears, so we only need to reset local state here.
   async function signOut() {
     lookupRequest.current += 1;
     setScannerOpen(false);
