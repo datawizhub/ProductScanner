@@ -13,6 +13,13 @@ export type BarcodeLookup = {
   totalQuantity: number;
 };
 
+export type Item = 
+{
+  id: string;
+  sku: string;
+  name: string;
+}
+
 export async function getPrototypeStoreId(): Promise<string | null> {
   const { data, error } = await getSupabase()
     .from('stores')
@@ -78,4 +85,22 @@ export async function lookupBarcode(storeId: string, barcode: string): Promise<B
     stock,
     totalQuantity: stock.reduce((sum, row) => sum + row.quantity, 0),
   };
+}
+
+export async function fetchAllItem(search = ''): Promise<Item[]> {
+  let query = getSupabase()
+    .from('items')
+    .select('id, sku, name')
+    .order('name', { ascending: true })
+    .limit(200);
+
+  if (search.trim()) {
+    query = query.or(
+      `name.ilike.%${search}%,sku.ilike.%${search}%`
+    );
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return data ?? [];
 }

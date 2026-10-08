@@ -43,7 +43,6 @@ export default function LoginScreen()
     // Need Access
     const handleNeedAccess = () => 
     {
-        // TODO: navigate to request access screen / open mail / open URL
         Alert.alert('Need access?', 'Contact your warehouse admin.');
     };
 

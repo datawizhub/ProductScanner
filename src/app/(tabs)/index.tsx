@@ -2,14 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+  ActivityIndicator, Modal, Pressable, ScrollView,
+  StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -292,7 +286,6 @@ function ScannerModal({
       animationType="slide"
       presentationStyle="fullScreen"
       onRequestClose={onClose}>
-      {/* The camera view is always black/white regardless of theme. */}
       <View style={scanner.container}>
         {!permission ? (
           <View style={scanner.center}>
@@ -312,7 +305,6 @@ function ScannerModal({
           <CameraView
             style={StyleSheet.absoluteFill}
             facing="back"
-            // QR is left out on purpose: it is reserved for bin/location labels.
             barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'code128', 'upc_a'] }}
             onBarcodeScanned={handleScan}
           />
