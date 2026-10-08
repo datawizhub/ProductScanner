@@ -4,7 +4,7 @@ export default function ItemsLayout()
 {
   return (
     <Stack>
-      <Stack.Screen name="[id]"/>
+      <Stack.Screen name="[id]" options={{ title: 'Item details', headerBackTitle: 'Items' }}/>
     </Stack>
   );
 }
