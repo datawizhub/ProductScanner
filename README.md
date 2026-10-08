@@ -1,67 +1,54 @@
 # ProductScanner
 
-## Test an EAN-13 scan against Supabase
+Expo SDK 57 / React Native warehouse prototype for staff and managers at an Australian store. Product barcodes identify items; app QR labels identify bins. Stock mutations use Supabase RPCs and an attributed movement ledger.
 
-1. Copy `.env.example` to `.env.local` and fill in the project's **publishable** key. Never use a secret or service-role key in the app. Restart Expo after changing the file.
-2. Run `npx expo start --lan` and open the app in Expo Go on your phone.
-3. Sign in on the Login tab with an invited Prototype Store account. Successful sign-in opens the scanner on Home. Accounts and roles are assigned by an administrator; the app does not offer self-registration.
-4. Scan [EAN-13 test label 5901234123457](test-assets/ean13-5901234123457.svg). It should show **EAN-13 Scan Test Item** (SKU `DEMO-EAN13`), price $0.00, and no stock recorded yet.
+## Run on a phone
 
-The scan looks up the exact barcode text within `prototype-store`. If a barcode is not in `item_barcodes`, the app shows a not-found message. Stock quantities and aisle/rack/bin appear when stock is received through the database RPCs. Signing out returns to the Login tab.
+1. Install Node.js **22.13.0 or newer**, then run `npm ci` in the project root.
+2. Copy `.env.example` to **`.env.local` beside `package.json`**. Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` using the project's publishable key. Secret and service-role/admin keys belong outside the app. Restart Expo after environment changes.
+3. Run `npx expo start --lan` and open the app with Expo Go on the phone. The computer and phone must be able to reach each other. Use an installed development build for the app's native `productscanner://` callback scheme.
+4. Sign in with an administrator-provisioned Prototype Store account. The administrator creates/invites users in Supabase Auth and assigns `staff` or `manager` through `store_memberships`; the app has no self-role registration.
 
-# Expo template notes
+For invitation or password recovery in Expo Go/browser preview, open **Forgot password or finish invitation?** on Login. Copy the **original link address directly from the email without opening it** into **Invitation or reset link**, choose **Verify email link**, and set a password. Link previews can consume a one-use token. Automatic callbacks require an installed app that registers the scheme. The exact approved Auth Site URL and callback are `productscanner://auth-callback`. No emails were sent by the implementation/verification work.
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Features
 
-## Get started
+- **Stock actions:** staff and managers receive, move, and pick; managers adjust absolute counts with a required reason. Idempotent receipts support persisted pending actions, safe retry, and server-reconciled cancellation.
+- **Locations:** filter bins and view their contents/QR labels. Managers add/edit and delete eligible unused locations. Labels encode store and location IDs so renaming a code preserves identity.
+- **Catalog management:** managers add/edit items, manage multiple product barcodes, and link an unknown barcode to an existing item after explicit confirmation.
+- **Search and lookup:** search names, SKUs, or exact barcodes in 50-row pages; use manual barcode lookup when camera scanning is unavailable.
+- **Account setup:** view assigned store/role, refresh access, sign out, and complete invitation/password recovery.
+- **Movement history:** view newest-first pages with actor, quantity, source/destination, time, and note.
 
-1. Install dependencies
+## Existing grocery test labels
 
-   ```bash
-   npm install
-   ```
+Show an SVG on another screen or print it for a phone scan. The recorded starting stock was 10 of each in `A-01-01`; check the current count before live testing.
 
-2. Start the app
+| Barcode | Label |
+| --- | --- |
+| `2990000000019` | [EAN-13 label](test-assets/ean13-2990000000019.svg) |
+| `2990000000026` | [EAN-13 label](test-assets/ean13-2990000000026.svg) |
+| `2990000000033` | [EAN-13 label](test-assets/ean13-2990000000033.svg) |
+| `2990000000040` | [EAN-13 label](test-assets/ean13-2990000000040.svg) |
 
-   ```bash
-   npx expo start
-   ```
+The [workflow record and phone checklist](docs/warehouse-workflows.md) describe expected behavior and outstanding native checks. **Performing the phone checklist changes live stock and records.** The [SQL integration test](supabase/tests/warehouse_workflows.sql) uses a transaction and rolls its test changes back.
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Checks
 
 ```bash
-npm run reset-project
+npm test
+npx tsc --noEmit
+npm run lint
+npx expo export --platform all
+npx expo-doctor
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Run lint and typecheck before declaring changes complete. For new Expo dependencies, use `npx expo install <package>` to resolve an SDK-compatible version. Native camera/QR behavior, gestures, keyboard handling, and Auth callbacks still require phone testing; successful bundles do not establish that evidence.
 
-### Other setup steps
+## Project records
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+- [Warehouse workflows, verification status, and phone acceptance](docs/warehouse-workflows.md)
+- [Database contracts, provisioning, and migrations](supabase/README.md)
+- [Product scope](PRODUCT.md) and [existing design system](DESIGN.md)
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Routes live in `src/app/`; shared components, hooks, and data helpers live outside that directory. The prototype has no offline stock workflow, expiry/batch tracking, reports, or multiple warehouses.

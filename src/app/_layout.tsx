@@ -7,11 +7,12 @@ import { MessageScreen } from '@/components/message-screen';
 import { ThemeContextProvider } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { StoreProvider } from '@/lib/store-access';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
-  const { ready, session } = useAuth();
+  const { ready, session, needsPassword } = useAuth();
 
   if (!isSupabaseConfigured) 
   {
@@ -24,13 +25,17 @@ function RootNavigator() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={!!session}>
+      <Stack.Protected guard={!!session && !needsPassword}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="items" options={{ headerShown: false }} />
+        <Stack.Screen name="locations" />
+        <Stack.Screen name="stock" />
       </Stack.Protected>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="login" />
       </Stack.Protected>
+      <Stack.Screen name="account-setup" />
+      <Stack.Screen name="auth-callback" />
       
     </Stack>
   );
@@ -42,8 +47,10 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <ThemeContextProvider>
         <AuthProvider>
+          <StoreProvider>
           <AnimatedSplashOverlay />
           <RootNavigator />
+          </StoreProvider>
         </AuthProvider>
       </ThemeContextProvider>
     </ThemeProvider>

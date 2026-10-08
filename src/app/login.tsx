@@ -2,29 +2,36 @@ import { useTheme } from '@/constants/theme';
 import { getSupabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { errorMessage } from '@/lib/warehouse';
+import { useAuth } from '@/lib/auth';
 import {
-    ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
-    StyleSheet, Text, TextInput, TouchableOpacity, View
+    ActivityIndicator, KeyboardAvoidingView, Platform,
+    ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LoginScreen() 
 {
     const { colors, spacing } = useTheme();
+    const { finishPasswordSetup } = useAuth();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [load, setLoad] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const locked = useRef(false);
 
     const handleSignIn = async () => {
+        if (locked.current) return;
         if (!email.trim() || !password) {
-            Alert.alert('Missing info', 'Please enter both email and password.');
+            setError('Please enter both email and password.');
             return;
         }
 
-        setLoad(true);
+        locked.current = true;
+        setLoad(true); setError(null);
         try {
             const { data, error } = await getSupabase().auth.signInWithPassword({
                 email: email.trim(),
@@ -32,18 +39,19 @@ export default function LoginScreen()
             });
             if (error) throw error;
             if (!data.session) throw new Error('Could not start a session. Please try again.');
-            router.replace('/');
+            finishPasswordSetup();
         } catch (error) {
-            Alert.alert('Sign in failed', error instanceof Error ? error.message : 'Please try again.');
+            setError(errorMessage(error));
         } finally {
             setLoad(false);
+            locked.current = false;
         }
     };
 
     // Need Access
     const handleNeedAccess = () => 
     {
-        Alert.alert('Need access?', 'Contact your warehouse admin.');
+        setError('Contact your warehouse administrator to create your app account and assign store access.');
     };
 
     const canSubmit = email.trim().length > 0 && password.length > 0 && !load;
@@ -54,7 +62,7 @@ export default function LoginScreen()
             <KeyboardAvoidingView
                 style={styles.flex}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                <View style={[styles.content, { padding: spacing.four, gap: spacing.four }]}>
+                <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, { padding: spacing.four, gap: spacing.four }]}>
 
                 {/* Header */}
                 <View style={{ gap: spacing.one, marginBottom: spacing.two }}>
@@ -70,6 +78,7 @@ export default function LoginScreen()
                 <View style={{ gap: spacing.one }}>
                     <Text style={[styles.label, { color: colors.text }]}>Email</Text>
                     <TextInput
+                        accessibilityLabel="Email"
                         style=
                         {[
                             styles.input,
@@ -95,6 +104,7 @@ export default function LoginScreen()
                     <Text style={[styles.label, { color: colors.text }]}>Password</Text>
                     <View style={styles.passwordRow}>
                     <TextInput
+                        accessibilityLabel="Password"
                         style=
                         {[
                             styles.input,
@@ -114,6 +124,8 @@ export default function LoginScreen()
                         textContentType="password"
                     />
                     <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
                         style={styles.eyeBtn}
                         onPress={() => setShowPassword((v) => !v)}>
                             <Ionicons
@@ -125,6 +137,7 @@ export default function LoginScreen()
                     </View>
                 </View>
 
+                {error ? <Text accessibilityLiveRegion="assertive" style={{ color: colors.danger }}>{error}</Text> : null}
                 {/* Sign in */}
                 <TouchableOpacity
                     accessibilityRole="button"
@@ -141,13 +154,17 @@ export default function LoginScreen()
                     )}
                 </TouchableOpacity>
 
+                <TouchableOpacity accessibilityRole="button" style={{ minHeight: 48, justifyContent: 'center' }}
+                    onPress={() => router.push('/account-setup')}>
+                    <Text style={[styles.needAccessLink, { color: colors.primary }]}>Forgot password or finish invitation?</Text>
+                </TouchableOpacity>
                 {/* Need access */}
-                <TouchableOpacity onPress={handleNeedAccess}>
+                <TouchableOpacity accessibilityRole="button" style={{ minHeight: 48, justifyContent: 'center' }} onPress={handleNeedAccess}>
                     <Text style={[styles.needAccessLink, { color: colors.primary, textDecorationLine: 'underline' }]}>
                         Need Access?
                     </Text>
                 </TouchableOpacity>
-                </View>
+                </ScrollView>
             </KeyboardAvoidingView>
     </SafeAreaView>
     );
@@ -157,7 +174,7 @@ const styles = StyleSheet.create
 ({
     container: { flex: 1 },
     flex: { flex: 1 },
-    content: { flex: 1, justifyContent: 'center' },
+    content: { flexGrow: 1, justifyContent: 'center', width: '100%', maxWidth: 640, alignSelf: 'center' },
 
     title: { fontSize: 28, fontWeight: '700' },
     subtitle: { fontSize: 15 },
@@ -169,7 +186,7 @@ const styles = StyleSheet.create
 
     passwordRow: { position: 'relative', justifyContent: 'center' },
     passwordInput: { paddingRight: 48 },
-    eyeBtn: { position: 'absolute', right: 12, padding: 4 },
+    eyeBtn: { position: 'absolute', right: 4, width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
 
     signInBtn: { borderRadius: 12, paddingVertical: 16, alignItems: 'center',
                  justifyContent: 'center', marginTop: 8 },

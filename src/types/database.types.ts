@@ -314,6 +314,45 @@ export type Database = {
         }
         Returns: undefined
       }
+      apply_stock_movement: {
+        Args: {
+          p_action: string
+          p_item_id: string
+          p_location_id: string
+          p_note?: string
+          p_quantity: number
+          p_request_id: string
+          p_store_id: string
+          p_to_location_id?: string
+        }
+        Returns: undefined
+      }
+      cancel_stock_receipt: {
+        Args: {
+          p_action: string
+          p_item_id: string
+          p_location_id: string
+          p_note?: string
+          p_quantity: number
+          p_request_id: string
+          p_store_id: string
+          p_to_location_id?: string
+        }
+        Returns: string
+      }
+      item_movement_history: {
+        Args: { p_item_id: string; p_offset?: number; p_store_id: string }
+        Returns: {
+          actor_email: string
+          created_at: string
+          from_code: string
+          id: number
+          note: string
+          quantity: number
+          to_code: string
+          type: string
+        }[]
+      }
       move_stock: {
         Args: {
           p_from_location_id: string
@@ -344,6 +383,39 @@ export type Database = {
           p_store_id: string
         }
         Returns: undefined
+      }
+      save_catalog_item: {
+        Args: {
+          p_barcode?: string
+          p_description?: string
+          p_item_id?: string
+          p_name: string
+          p_price: number
+          p_sku: string
+          p_store_id: string
+          p_unit: string
+        }
+        Returns: string
+      }
+      search_catalog: {
+        Args: { p_offset?: number; p_search?: string; p_store_id: string }
+        Returns: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          price: number
+          sku: string
+          store_id: string
+          unit: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "items"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
     }
     Enums: {

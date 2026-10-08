@@ -33,7 +33,12 @@
           "imageWidth": 76
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      ["expo-camera", {
+        "cameraPermission": "Allow ProductScanner to scan product barcodes and warehouse bin labels.",
+        "recordAudioAndroid": false,
+        "barcodeScannerEnabled": true
+      }]
     ],
     "experiments": {
       "typedRoutes": true,
