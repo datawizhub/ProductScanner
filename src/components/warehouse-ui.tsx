@@ -1,11 +1,11 @@
-import { useState, type ReactNode } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { useTheme } from '@/constants/theme';
 import { useStore } from '@/lib/store-access';
 import { getSupabase } from '@/lib/supabase';
 import { errorMessage } from '@/lib/warehouse';
+import { router } from 'expo-router';
+import { useState, type ReactNode } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export function Button({ title, onPress, busy = false, disabled = false, secondary = false, danger = false }: {
   title: string; onPress: () => void; busy?: boolean; disabled?: boolean; secondary?: boolean; danger?: boolean;
@@ -85,9 +85,9 @@ export const layout = StyleSheet.create({
 });
 const styles = StyleSheet.create({
   screen: { padding: 24, gap: 20, paddingBottom: 48, width: '100%', maxWidth: 720, alignSelf: 'center' },
-  panel: { padding: 18, borderRadius: 14, gap: 12 },
-  button: { minHeight: 48, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 12,
+  panel: { padding: 18, borderRadius: 20, gap: 12 },
+  button: { minHeight: 48, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 24,
     alignItems: 'center', justifyContent: 'center' },
-  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13,
+  input: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 13,
     fontSize: 16, minHeight: 48 },
 });

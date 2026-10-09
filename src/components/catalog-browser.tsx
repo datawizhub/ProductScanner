@@ -1,10 +1,10 @@
-import { useCallback, useState, type ReactNode } from 'react';
-import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/constants/theme';
 import { useRemote } from '@/hooks/use-remote';
 import { useStore } from '@/lib/store-access';
 import { listCatalog, type CatalogItem } from '@/lib/warehouse';
+import { useCallback, useState, type ReactNode } from 'react';
+import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Copy, Field, Notice } from './warehouse-ui';
 
 export function CatalogBrowser({ title, onChoose, header }: { title: string; onChoose: (item: CatalogItem) => void; header?: ReactNode }) {
@@ -21,7 +21,7 @@ export function CatalogBrowser({ title, onChoose, header }: { title: string; onC
     <FlatList data={data ?? []} keyExtractor={item => item.id} keyboardShouldPersistTaps="handled"
       refreshing={loading} onRefresh={reload} contentContainerStyle={{ padding: 24, paddingBottom: 48, gap: 12 }}
       ListHeaderComponent={<View style={{ gap: 16, marginBottom: 8 }}>
-        <Copy title>{title}</Copy>{header}
+        <Text style={{ fontSize: 28, fontWeight: '700', color: colors.text }}>{title}</Text>{header}
         <Field label="Search catalog" value={draft} onChangeText={setDraft} placeholder="Name, SKU or exact barcode"
           onSubmitEditing={applySearch} returnKeyType="search" />
         <Button title="Search" secondary onPress={applySearch} />

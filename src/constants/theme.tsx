@@ -1,8 +1,3 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
 import '@/global.css';
 
 import { createContext, ReactNode, useContext, useMemo } from 'react';
@@ -12,26 +7,28 @@ export const Colors =
 {
     light: 
     {
-        text: '#000000',
+        text: '#1a1a1a',
         background: '#ffffff',
-        backgroundElement: '#F0F0F3',
-        backgroundSelected: '#E0E1E6',
-        textSecondary: '#60646C',
-        primary: '#1e6ef2',
-        primaryText: '#ffffff',
-        danger: '#b91c1c',
+        backgroundElement: '#eee6a4',
+        backgroundSelected: '#ffe9a8',
+        textSecondary: '#7b7f8a',
+        primary: '#fdbf2d',
+        primaryText: '#1a1a1a',
+        danger: '#e8304a',
+        accent: '#b45309',
     },
 
     dark: 
     {
-        text: '#ffffff',
-        background: '#000000',
-        backgroundElement: '#212225',
-        backgroundSelected: '#2E3135',
-        textSecondary: '#B0B4BA',
-        primary: '#4d8dff',
-        primaryText: '#ffffff',
-        danger: '#f87171',
+        text: '#fff4e6',
+        background: '#15110d',
+        backgroundElement: '#5f462d',
+        backgroundSelected: '#3a2b1c',
+        textSecondary: '#b8a590',
+        primary: '#94561b',
+        primaryText: '#d2cfcf',
+        danger: '#ff6b6b',
+        accent: '#ffa04d',
     },
 } as const;
 

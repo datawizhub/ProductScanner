@@ -3,8 +3,9 @@ import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { Ionicons } from '@expo/vector-icons';
 export default function AppTabs() {
   const { colors } = useTheme();
-  return <NativeTabs backgroundColor={colors.background} indicatorColor={colors.backgroundElement}
-    labelStyle={{ selected: { color: colors.primary } }}>
+  return <NativeTabs backgroundColor={colors.primary} indicatorColor="rgba(26,26,26,0.18)"
+    iconColor={{ default: 'rgba(26,26,26,0.6)', selected: colors.primaryText }}
+    labelStyle={{ default: { color: 'rgba(26,26,26,0.6)' }, selected: { color: colors.primaryText } }}>
     <NativeTabs.Trigger name="index">
       <NativeTabs.Trigger.Label>Scan</NativeTabs.Trigger.Label>
       <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={Ionicons} name="barcode-outline" />} renderingMode="template" />

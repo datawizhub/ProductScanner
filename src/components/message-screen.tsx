@@ -21,16 +21,16 @@ export function MessageScreen({ message, loading = false, onRetry, onSignOut }: 
       {[
         styles.container, { backgroundColor: colors.background, padding: spacing.four, gap: spacing.three },
       ]}>
-      {loading && <ActivityIndicator color={colors.primary} />}
+      {loading && <ActivityIndicator color={colors.accent} />}
       <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
       {onRetry && (
         <Pressable accessibilityRole="button" onPress={onRetry}>
-          <Text style={[styles.action, { color: colors.primary }]}>Retry</Text>
+          <Text style={[styles.action, { color: colors.accent }]}>Retry</Text>
         </Pressable>
       )}
       {onSignOut && (
         <Pressable accessibilityRole="button" onPress={onSignOut}>
-          <Text style={[styles.action, { color: colors.primary }]}>Sign out</Text>
+          <Text style={[styles.action, { color: colors.accent }]}>Sign out</Text>
         </Pressable>
       )}
     </SafeAreaView>
