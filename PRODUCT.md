@@ -21,7 +21,7 @@ The prototype tests functionality on phones. There is no existing ERP or custome
 
 ## Capabilities and Constraints
 
-Expo SDK 57, React Native and TypeScript; hosted Supabase PostgreSQL in Sydney.
+Expo SDK 58, React Native and TypeScript; hosted Supabase PostgreSQL in Sydney.
 Postgres RPCs alone mutate stock. RLS isolates stores. Barcodes are strings and an item may have many.
 Staff read and receive/move/pick; managers additionally edit catalog/locations and adjust counts.
 Account provisioning is an administrator task; users do not choose their own role.

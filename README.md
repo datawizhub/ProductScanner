@@ -1,12 +1,12 @@
 # ProductScanner
 
-Expo SDK 57 / React Native warehouse prototype for staff and managers at an Australian store. Product barcodes identify items; app QR labels identify bins. Stock mutations use Supabase RPCs and an attributed movement ledger.
+Expo SDK 58 / React Native warehouse prototype for staff and managers at an Australian store. Product barcodes identify items; app QR labels identify bins. Stock mutations use Supabase RPCs and an attributed movement ledger.
 
 ## Run on a phone
 
-1. Install Node.js **22.13.0 or newer**, then run `npm ci` in the project root.
+1. Install a supported Node.js release: **22.13+, 24.3+, or 26.x**, then run `npm ci` in the project root. Node 20 cannot run Expo SDK 58.
 2. Copy `.env.example` to **`.env.local` beside `package.json`**. Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` using the project's publishable key. Secret and service-role/admin keys belong outside the app. Restart Expo after environment changes.
-3. Run `npx expo start --lan` and open the app with Expo Go on the phone. The computer and phone must be able to reach each other. Use an installed development build for the app's native `productscanner://` callback scheme.
+3. Stop any old Expo server, then run `npx expo start --clear --lan` once after the SDK upgrade and open the app with Expo Go on the phone. The computer and phone must be able to reach each other. Use an installed development build for the app's native `productscanner://` callback scheme.
 4. Sign in with an administrator-provisioned Prototype Store account. The administrator creates/invites users in Supabase Auth and assigns `staff` or `manager` through `store_memberships`; the app has no self-role registration.
 
 For invitation or password recovery in Expo Go/browser preview, open **Forgot password or finish invitation?** on Login. Copy the **original link address directly from the email without opening it** into **Invitation or reset link**, choose **Verify email link**, and set a password. Link previews can consume a one-use token. Automatic callbacks require an installed app that registers the scheme. The exact approved Auth Site URL and callback are `productscanner://auth-callback`. No emails were sent by the implementation/verification work.
